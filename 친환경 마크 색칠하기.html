@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>인증 마크 색칠하기</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0fff0;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: #2e7d32;
+      margin-top: 20px;
+    }
+    #container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 0 auto 30px; /* 도구와 겹치지 않도록 하단 공간 확보 */
+    }
+    canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      border: 2px solid #4caf50;
+      cursor: crosshair;
+    }
+    .palette, .tools {
+      margin: 10px auto;
+    }
+    .color, .tool {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #ccc;
+      display: inline-block;
+      cursor: pointer;
+      margin: 5px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 14px;
+      border-radius: 5px;
+      user-select: none;
+    }
+    .color:hover, .tool:hover {
+      border: 2px solid #000;
+    }
+    .buttons {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+      background-color: #81c784;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #66bb6a;
+    }
+  </style>
+</head>
+<body>
+  <h1>인증 마크 색칠하기</h1>
+
+  <div id="container">
+    <canvas id="bgCanvas" width="500" height="500"></canvas>
+    <canvas id="drawCanvas" width="500" height="500"></canvas>
+  </div>
+
+  <div class="palette" id="palette"></div>
+
+  <div class="tools">
+    <div class="tool" data-tool="brush">🖌️</div>
+    <div class="tool" data-tool="marker">🖍️</div>
+    <div class="tool" data-tool="stamp">🌟</div>
+    <div class="tool" data-tool="eraser">⛔</div>
+  </div>
+
+  <div class="buttons">
+    <button onclick="saveImage()">저장하기</button>
+    <button onclick="clearCanvas()">다시하기</button>
+  </div>
+
+  <script>
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+
+    const drawCanvas = document.getElementById('drawCanvas');
+    const drawCtx = drawCanvas.getContext('2d');
+
+    let currentColor = '#4caf50';
+    let currentTool = 'brush';
+    let drawing = false;
+
+    const colors = ['#4caf50', '#81c784', '#fdd835', '#ffffff', '#000000', '#2196f3', '#e91e63', '#ff5722', '#795548', '#ffeb3b', '#00bcd4', '#9c27b0'];
+
+    const palette = document.getElementById('palette');
+    colors.forEach(color => {
+      const colorDiv = document.createElement('div');
+      colorDiv.className = 'color';
+      colorDiv.style.backgroundColor = color;
+      colorDiv.addEventListener('click', () => currentColor = color);
+      palette.appendChild(colorDiv);
+    });
+
+    document.querySelectorAll('.tool').forEach(tool => {
+      tool.addEventListener('click', () => currentTool = tool.dataset.tool);
+    });
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.src = 'https://i.postimg.cc/xdjdWkYn/image.png'; // 이미지 주소 교체 가능
+    image.onload = () => bgCtx.drawImage(image, 0, 0, bgCanvas.width, bgCanvas.height);
+
+    drawCanvas.addEventListener('mousedown', function (e) {
+      const x = e.offsetX;
+      const y = e.offsetY;
+
+      if (currentTool === 'stamp') {
+        drawCtx.beginPath();
+        drawCtx.fillStyle = currentColor;
+        drawCtx.globalAlpha = 0.8;
+        drawCtx.arc(x, y, 20, 0, 2 * Math.PI);
+        drawCtx.fill();
+        drawCtx.globalAlpha = 1.0;
+      } else {
+        drawing = true;
+        drawCtx.beginPath();
+        drawCtx.moveTo(x, y);
+      }
+    });
+
+    drawCanvas.addEventListener('mousemove', function (e) {
+      if (!drawing || currentTool === 'stamp') return;
+
+      const x = e.offsetX;
+      const y = e.offsetY;
+
+      if (currentTool === 'eraser') {
+        drawCtx.strokeStyle = '#ffffff';
+        drawCtx.lineWidth = 20;
+        drawCtx.globalAlpha = 1.0;
+      } else if (currentTool === 'marker') {
+        drawCtx.strokeStyle = currentColor;
+        drawCtx.lineWidth = 15;
+        drawCtx.globalAlpha = 0.3;
+      } else {
+        drawCtx.strokeStyle = currentColor;
+        drawCtx.lineWidth = 10;
+        drawCtx.globalAlpha = 1.0;
+      }
+
+      drawCtx.lineCap = 'round';
+      drawCtx.lineTo(x, y);
+      drawCtx.stroke();
+    });
+
+    drawCanvas.addEventListener('mouseup', () => {
+      drawing = false;
+      drawCtx.closePath();
+    });
+
+    drawCanvas.addEventListener('mouseleave', () => {
+      drawing = false;
+      drawCtx.closePath();
+    });
+
+    function saveImage() {
+      const combinedCanvas = document.createElement('canvas');
+      combinedCanvas.width = 500;
+      combinedCanvas.height = 500;
+      const combinedCtx = combinedCanvas.getContext('2d');
+      combinedCtx.drawImage(bgCanvas, 0, 0);
+      combinedCtx.drawImage(drawCanvas, 0, 0);
+      const link = document.createElement('a');
+      link.download = '색칠한_이미지.png';
+      link.href = combinedCanvas.toDataURL();
+      link.click();
+    }
+
+    function clearCanvas() {
+      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    }
+  </script>
+</body>
+</html>
